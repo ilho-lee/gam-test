@@ -631,14 +631,111 @@ topic(
                "내가 사는 곳의 수준을 세계 평균으로 착각하기 쉽습니다."),
     ])
 
-# ── 11. 원화로 본 세 통화 ────────────────────────────────────────
+# ── 11. 서울의 눈 ────────────────────────────────────────────────
+# '눈 온 날' = 하루 강설량 0.1cm 이상. ERA5 에는 0 에 가까운 값이 섞여 있어
+# 0 초과로 세면 실제로는 눈이라 부르기 어려운 날까지 들어간다.
+# 첫눈은 겨울 시즌(7월 1일 ~ 이듬해 6월 30일) 단위로 센다. 달력 연도로 세면
+# 거의 항상 1월이 첫눈이 된다. 원본이 2024-12-31 에서 끝나므로 2024/25 시즌은
+# 다 차지 않아 빼고, 1990/91 ~ 2023/24 의 34개 시즌만 쓴다.
+_sj = load_json("seoul_snow.json")
+_s = _sj["daily"]
+SN = [{"d": dt.date.fromisoformat(t), "snow": s, "lo": lo}
+      for t, s, lo in zip(_s["time"], _s["snowfall_sum"], _s["temperature_2m_min"])]
+SNOW_MIN = 0.1
+# 강설량은 물 환산량을 고정 비율로 바꾼 값이라 일정한 단위로 끊겨 있다.
+# 그래서 SNOW_MIN 은 실제로는 그 이상인 가장 작은 값부터 센다
+snow_step = min(x["snow"] for x in SN if x["snow"] > 0)
+snow_eff = min(x["snow"] for x in SN if x["snow"] >= SNOW_MIN)
+
+
+def snow_years(a, b):
+    return [x for x in SN if a <= x["d"].year <= b]
+
+
+def snowy(x):
+    return x["snow"] >= SNOW_MIN
+
+
+n_snow_yrs = 2024 - 1990 + 1
+snow_avg = sum(1 for x in snow_years(1990, 2024) if snowy(x)) / n_snow_yrs
+snow_90s = sum(1 for x in snow_years(1990, 1999) if snowy(x)) / 10
+snow_10s = sum(1 for x in snow_years(2015, 2024) if snowy(x)) / 10
+s_ratio = snow_10s / snow_90s if snow_90s else 0
+snow_max = max(SN, key=lambda x: x["snow"])
+seasons = range(1990, 2024)
+first_snow = [next(x["d"] for x in SN
+                   if dt.date(y, 7, 1) <= x["d"] < dt.date(y + 1, 7, 1) and snowy(x))
+              for y in seasons]
+first_m = Counter(d.month for d in first_snow)
+first_top = first_m.most_common(1)[0]
+snow_by_m = {m: sum(1 for x in SN if x["d"].month == m and snowy(x)) / n_snow_yrs
+             for m in range(1, 13)}
+snowiest_m = max(snow_by_m, key=snow_by_m.get)
+
+topic(
+    "seoul-snow", "❄️", "서울의 눈",
+    "1990년부터 2024년까지, 서울의 하루 강설량",
+    "Open-Meteo Archive (ERA5 재분석)", "https://open-meteo.com/",
+    [
+        slider("s1", "1990~2024년, 서울에서 한 해에 눈이 온 날은 평균 며칠일까요?",
+               snow_avg, "일", 0, 40, 1,
+               f"1990~2024년 {n_snow_yrs}년 동안 하루 강설량 {SNOW_MIN}cm 이상인 날을 "
+               f"세어 연평균을 내면 {snow_avg:.1f}일입니다",
+               "함박눈이 온 몇 날이 기억에 남아서, 살짝 날린 날까지 센 일수는 "
+               "감이 잘 안 옵니다."),
+        # 보기는 배수에 가장 가까운 것이 정답이 되게 경계를 둔다
+        choice("s2", "1990년대와 2015~2024년, 한 해 눈 온 날은 몇 배 차이일까요?",
+               ["절반쯤으로 줄었다", "약 0.8배로 줄었다", "거의 같다", "약 1.5배로 늘었다"],
+               ["절반쯤으로 줄었다", "약 0.8배로 줄었다", "거의 같다", "약 1.5배로 늘었다"][
+                   0 if s_ratio < 0.65 else 1 if s_ratio < 0.9
+                   else 2 if s_ratio < 1.2 else 3],
+               f"하루 강설량 {SNOW_MIN}cm 이상인 날을 해마다 세어 평균하면 "
+               f"1990~1999년 {snow_90s:.1f}일 → 2015~2024년 {snow_10s:.1f}일로 "
+               f"{s_ratio:.2f}배입니다",
+               "'요즘은 눈이 안 온다'는 느낌과 실제로 줄어든 폭은 다를 수 있습니다."),
+        slider("s3", "1990~2024년, 서울에서 하루에 가장 많이 내린 눈은 몇 cm일까요?",
+               snow_max["snow"], "cm", 0, 40, 1,
+               f"1990~2024년 매일의 하루 강설량 중 최댓값은 "
+               f"{snow_max['d']:%Y년 %m월 %d일} {snow_max['snow']:.1f}cm입니다",
+               "뉴스에 나온 폭설은 도심 관측소 기준이고, 넓은 격자 평균은 "
+               "그보다 낮게 나옵니다."),
+        choice("s4", "1990~2024년, 서울의 첫눈은 보통 몇 월에 올까요?",
+               ["10월", "11월", "12월", "1월"], f"{first_top[0]}월",
+               f"1990/91~2023/24년 {len(first_snow)}개 겨울마다 7월 1일 이후 처음으로 "
+               f"하루 강설량 {SNOW_MIN}cm 이상인 날의 달을 세면 "
+               + " · ".join(f"{m}월 {first_m[m]}회" for m in sorted(first_m))
+               + "입니다",
+               "첫눈은 해마다 크게 흔들려서, '보통'이라는 말 안에 두 달이 거의 "
+               "반반 섞여 있습니다."),
+        choice("s5", "서울에서 눈이 가장 많이 내리는 달은 언제일까요?",
+               ["11월", "12월", "1월", "2월"], f"{snowiest_m}월",
+               f"1990~2024년 달마다 하루 강설량 {SNOW_MIN}cm 이상인 날을 세어 연평균을 "
+               "내면 " + " · ".join(f"{m}월 {snow_by_m[m]:.1f}일" for m in (11, 12, 1, 2))
+               + "입니다",
+               "연말 분위기 때문에 12월을 떠올리기 쉽지만, 한겨울의 정점은 "
+               "해가 바뀐 뒤에 옵니다."),
+    ],
+    caveat=f"이 숫자는 관측소에서 잰 눈이 아니라 위도 {_sj['latitude']}·경도 "
+           f"{_sj['longitude']} 지점을 중심으로 한 약 25km 격자의 ERA5 모델 추정값이고, "
+           "강설량은 물 환산량을 '물 10mm = 눈 7cm'로 바꾼 값이라 "
+           f"{snow_step:.2f}cm 단위로 끊겨 '눈 온 날'({SNOW_MIN}cm 이상)이 실제로는 "
+           f"{snow_eff:.2f}cm 이상으로 세어지며, 같은 출처를 다시 받았을 때 과거 값이 "
+           "바뀐 적도 있어 다른 곳에서 본 숫자와 다를 수 있습니다.")
+
+# ── 12. 원화로 본 세 통화 ────────────────────────────────────────
 # 원본은 '유로 1단위당 각 통화' 이고 한 줄이 '하루의 한 통화' 다.
 # 날짜로 묶은 뒤, 세 통화 값이 모두 있는 날만 쓴다 (빈 값 = 고시 없는 휴일).
 # 원화 기준 값은 같은 날 두 값을 나눠서 구한다: 100엔 = KRW / JPY × 100
 _fx = {}
-for r in load_csv("ecb_krw_jpy_usd.csv"):
+_fx_rows = load_csv("ecb_krw_jpy_usd.csv")
+for r in _fx_rows:
     if r["OBS_VALUE"]:
         _fx.setdefault(r["TIME_PERIOD"], {})[r["CURRENCY"]] = float(r["OBS_VALUE"])
+# 고시 시각도 손으로 적지 않는다 — 원본 제목 칸 '…, 2.15 pm (C.E.T.)' 에서 읽는다
+_fx_hm = _fx_rows[0]["TITLE_COMPL"].rsplit(", ", 1)[1].split()[0]
+_fx_h, _fx_m = (int(x) for x in _fx_hm.split("."))
+fx_time = f"{_fx_h + 12 if 'pm' in _fx_rows[0]['TITLE_COMPL'] else _fx_h}시 {_fx_m}분"
+fx_blank = sum(1 for r in _fx_rows if r["CURRENCY"] == "KRW" and not r["OBS_VALUE"])
 FX3 = sorted((d, v) for d, v in _fx.items() if len(v) == 3)
 fx_first, fx_last = FX3[0][0], FX3[-1][0]
 KRW_PER = {"엔화": lambda v: v["KRW"] / v["JPY"] * 100,     # 100엔
@@ -712,9 +809,11 @@ topic(
                "'유로가 달러보다 비싸다'는 인상이 강해서, 반대였던 시기는 잘 "
                "떠오르지 않습니다."),
     ],
-    caveat="유럽중앙은행이 하루 한 번(중부유럽 시간 오후) 고시하는 유로 기준 환율이고, "
-           "원화 대비 엔화·달러는 같은 날의 두 값을 나눠 구한 값입니다. 서울 외환시장 "
-           "종가나 은행 고시 환율과는 시각과 기준이 달라 숫자가 조금씩 다릅니다.")
+    caveat=f"이 숫자는 서울 외환시장 종가가 아니라 유럽중앙은행이 중부유럽 시간 {fx_time}에 "
+           "한 번 정해 '참고용'으로만 내는 유로 기준 환율이고, 원화로 본 엔화·달러는 시장에서 "
+           "직접 거래된 값이 아니라 같은 날 두 값을 나눠 만든 값이며, 날짜도 한국 거래일이 "
+           f"아닌 유럽중앙은행 고시일이라(한국 공휴일은 들어 있고 유럽 휴일 {fx_blank}일은 "
+           "비어 있음) 뉴스나 은행에서 본 숫자와 다를 수 있습니다.")
 
 
 # ════════════════════════════════════════════════════════════════

@@ -122,6 +122,13 @@
       "source": "Our World in Data"
     },
     {
+      "id": "seoul-snow",
+      "emoji": "❄️",
+      "title": "서울의 눈",
+      "blurb": "1990년부터 2024년까지, 서울의 하루 강설량",
+      "source": "Open-Meteo Archive (ERA5 재분석)"
+    },
+    {
       "id": "krw-three",
       "emoji": "💱",
       "title": "원화로 본 세 통화",
