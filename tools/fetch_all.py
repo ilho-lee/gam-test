@@ -95,6 +95,12 @@ SOURCES: list[tuple[str, str, str]] = [
      "https://api.frankfurter.dev/v1/1999-01-04..2024-12-31"
      "?base=USD&symbols=KRW"),
 
+    # 유로 1단위당 원화·엔화·달러. 원화 대비 엔화·달러는 같은 날 두 값을 나눠서 구한다
+    ("ecb_krw_jpy_usd.csv",
+     "유로 대비 원화·엔화·달러 1999~2024 (ECB Data Portal · 일별 기준환율)",
+     "https://data-api.ecb.europa.eu/service/data/EXR/D.KRW+JPY+USD.EUR.SP00.A"
+     "?format=csvdata&startPeriod=1999-01-04&endPeriod=2024-12-31"),
+
     ("wb_countries.json",
      "World Bank 국가 목록 — 대륙·소득군 같은 집계치를 걸러내는 데 씁니다",
      "https://api.worldbank.org/v2/country?format=json&per_page=400"),
