@@ -722,6 +722,91 @@ topic(
            f"{snow_eff:.2f}cm 이상으로 세어지며, 같은 출처를 다시 받았을 때 과거 값이 "
            "바뀐 적도 있어 다른 곳에서 본 숫자와 다를 수 있습니다.")
 
+# ── 12. 원화로 본 세 통화 ────────────────────────────────────────
+# 원본은 '유로 1단위당 각 통화' 이고 한 줄이 '하루의 한 통화' 다.
+# 날짜로 묶은 뒤, 세 통화 값이 모두 있는 날만 쓴다 (빈 값 = 고시 없는 휴일).
+# 원화 기준 값은 같은 날 두 값을 나눠서 구한다: 100엔 = KRW / JPY × 100
+_fx = {}
+for r in load_csv("ecb_krw_jpy_usd.csv"):
+    if r["OBS_VALUE"]:
+        _fx.setdefault(r["TIME_PERIOD"], {})[r["CURRENCY"]] = float(r["OBS_VALUE"])
+FX3 = sorted((d, v) for d, v in _fx.items() if len(v) == 3)
+fx_first, fx_last = FX3[0][0], FX3[-1][0]
+KRW_PER = {"엔화": lambda v: v["KRW"] / v["JPY"] * 100,     # 100엔
+           "달러": lambda v: v["KRW"] / v["USD"],
+           "유로": lambda v: v["KRW"]}
+UNIT = {"엔화": "100엔", "달러": "1달러", "유로": "1유로"}
+
+jpy_month = {}
+for d, v in FX3:
+    jpy_month.setdefault(d[:7], []).append(KRW_PER["엔화"](v))
+jpy_month = {k: mean(v) for k, v in jpy_month.items()}
+jpy_low = min(jpy_month, key=jpy_month.get)
+JPY_BANDS = [("1999~2004년", 1999, 2004), ("2005~2009년", 2005, 2009),
+             ("2010~2019년", 2010, 2019), ("2020~2024년", 2020, 2024)]
+jpy_low_band = next(b for b, a, z in JPY_BANDS if a <= int(jpy_low[:4]) <= z)
+
+eur_avg = mean(KRW_PER["유로"](v) for _, v in FX3)
+
+
+def fx_year(name, y):
+    return mean(KRW_PER[name](v) for d, v in FX3 if d[:4] == str(y))
+
+
+fx_rise = {c: fx_year(c, 2024) / fx_year(c, 1999) - 1 for c in KRW_PER}
+fx_top = max(fx_rise, key=fx_rise.get)
+jpy_under = sum(1 for _, v in FX3 if KRW_PER["엔화"](v) < 1000)
+jpy_under_pct = jpy_under / len(FX3) * 100
+# 원본의 USD 는 '1유로당 달러'. 1보다 작으면 1달러가 1유로보다 비싸다
+usd_year = {}
+for d, v in FX3:
+    usd_year.setdefault(int(d[:4]), []).append(v["USD"])
+usd_dear = sorted(y for y, v in usd_year.items() if mean(v) < 1)
+
+topic(
+    "krw-three", "💱", "원화로 본 세 통화",
+    "1999년부터 2024년까지, 원화로 본 엔화·달러·유로",
+    "ECB Data Portal (유럽중앙은행 일별 기준환율)", "https://data.ecb.europa.eu/",
+    [
+        choice("k1", "1999~2024년, 100엔이 원화로 가장 쌌던 달은 언제쯤일까요?",
+               [b for b, _, _ in JPY_BANDS], jpy_low_band,
+               f"{fx_first}~{fx_last} 거래일마다 원화 값을 엔화 값으로 나눠 100엔당 원화를 "
+               f"구하고 달별로 평균하면 가장 낮은 달은 {jpy_low[:4]}년 {int(jpy_low[5:])}월 "
+               f"{jpy_month[jpy_low]:,.1f}원입니다",
+               "'엔저'는 최근 일로 기억되지만, 원화로 본 엔화가 가장 쌌던 때는 "
+               "따로 있습니다."),
+        slider("k2", "1999~2024년 평균, 1유로는 몇 원이었을까요?",
+               eur_avg, "원", 900, 1800, 25,
+               f"{fx_first}~{fx_last} 거래일 {len(FX3):,}일의 1유로당 원화 값을 평균하면 "
+               f"{eur_avg:,.1f}원입니다",
+               "유로는 자주 보는 통화가 아니라서, 달러에 비해 감이 크게 "
+               "흔들립니다."),
+        choice("k3", "세 통화 중 1999년 대비 2024년에 원화로 가장 많이 오른 통화는?",
+               ["엔화", "달러", "유로"], fx_top,
+               "1999년과 2024년의 거래일 평균 원화 값을 비교하면 "
+               + " · ".join(f"{c} {UNIT[c]} {fx_year(c, 1999):,.0f}원 → "
+                            f"{fx_year(c, 2024):,.0f}원({fx_rise[c] * 100:+.1f}%)"
+                            for c in KRW_PER) + "입니다",
+               "뉴스에 자주 나오는 통화가 가장 많이 움직인 통화라는 보장은 없습니다."),
+        slider("k4", "1999~2024년, 100엔이 1,000원보다 쌌던 날은 전체의 몇 %일까요?",
+               jpy_under_pct, "%", 0, 100, 5,
+               f"{fx_first}~{fx_last} 거래일 {len(FX3):,}일 중 100엔당 원화(원화 값 ÷ 엔화 값 "
+               f"× 100)가 1,000원 미만인 날은 {jpy_under:,}일입니다",
+               "'100엔 = 1,000원'이라는 기준점이 머릿속에 박혀 있어서, 그 아래였던 "
+               "날의 비율은 감이 잘 안 옵니다."),
+        slider("k5", "1999~2024년 중 1달러가 1유로보다 비쌌던 해는 몇 번일까요?",
+               len(usd_dear), "번", 0, 10, 1,
+               f"{fx_first[:4]}~{fx_last[:4]}년 해마다 1유로당 달러 값을 거래일 평균해 "
+               f"1보다 작은 해를 세면 {len(usd_dear)}번"
+               + (f"({', '.join(f'{y}년' for y in usd_dear)})" if usd_dear else "")
+               + "입니다",
+               "'유로가 달러보다 비싸다'는 인상이 강해서, 반대였던 시기는 잘 "
+               "떠오르지 않습니다."),
+    ],
+    caveat="유럽중앙은행이 하루 한 번(중부유럽 시간 오후) 고시하는 유로 기준 환율이고, "
+           "원화 대비 엔화·달러는 같은 날의 두 값을 나눠 구한 값입니다. 서울 외환시장 "
+           "종가나 은행 고시 환율과는 시각과 기준이 달라 숫자가 조금씩 다릅니다.")
+
 
 # ════════════════════════════════════════════════════════════════
 def main() -> None:
