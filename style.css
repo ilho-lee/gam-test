@@ -74,14 +74,16 @@ html:has(#view-home:not([hidden])) body {
 }
 #view-home { padding-bottom: 120px; }   /* 카드가 실루엣에 덮이지 않게 */
 
-/* 세 통화 주제를 푸는 동안 — 화폐 무늬 바탕 (첫 화면 규칙이 더 강해서 첫 화면에는 안 나온다) */
-html[data-topic="krw-three"], html[data-topic="krw-three"] body {
-  background: url("bg-money.svg") 0 0 / 260px 260px repeat, var(--bg);
+/* 세 통화 주제를 푸는 동안 — 화폐 무늬를 흐릿하게 한 겹 깐다.
+   배경 그림에는 흐림을 줄 수 없어서, 화면 전체를 덮는 겹(::before)에 그려 흐림·투명도를 준다.
+   첫 화면에서는 나오지 않는다 */
+html[data-topic="krw-three"] body:not(:has(#view-home:not([hidden])))::before {
+  content: ""; position: fixed; inset: -20px; z-index: -1; pointer-events: none;
+  background: url("bg-money.svg") 0 0 / 260px 260px repeat;
+  filter: blur(3px); opacity: .45;
 }
-/* 글씨가 무늬에 묻히지 않게 가운데 칸만 반투명 막을 깐다 */
-html[data-topic="krw-three"] body:not(:has(#view-home:not([hidden]))) #app {
-  background: rgba(244, 246, 251, .88); border-radius: 22px;
-}
+/* body 자체 바탕이 그 겹을 덮지 않게, 이때만 body 바탕을 비운다 (바탕색은 html 이 낸다) */
+html[data-topic="krw-three"] body:not(:has(#view-home:not([hidden]))) { background: transparent; }
 
 .hero { padding: 34px 0 26px; }
 .badge-day {
