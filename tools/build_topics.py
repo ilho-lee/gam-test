@@ -70,38 +70,41 @@ def choice(qid, text, options, answer, basis, why):
 # 원본은 '유로 1단위당 각 통화' 이고 한 줄이 '하루의 한 통화' 다.
 # 날짜로 묶은 뒤, 세 통화 값이 모두 있는 날만 쓴다 (빈 값 = 고시 없는 휴일).
 # 원화 기준 값은 같은 날 두 값을 나눠서 구한다: 100엔 = KRW / JPY × 100
-_fx = {}
+# 원본은 두 파일: 1999~2024 파일과 최근 기간 파일(2021-01~2026-09). 둘 다 받은 그대로 두고,
+# 2020년까지는 앞 파일, 2021년부터는 뒤 파일 값을 쓴다 (겹치는 2021~2024년은 뒤 파일).
+FX_SPLIT = "2021-01-01"
 _fx_rows = load_csv("ecb_krw_jpy_usd.csv")
-for r in _fx_rows:
+_fx_rows_new = load_csv("ecb_krw_jpy_usd_2021_2026.csv")
+_fx_used = ([r for r in _fx_rows if r["TIME_PERIOD"] < FX_SPLIT]
+            + [r for r in _fx_rows_new if r["TIME_PERIOD"] >= FX_SPLIT])
+_fx = {}
+for r in _fx_used:
     if r["OBS_VALUE"]:
         _fx.setdefault(r["TIME_PERIOD"], {})[r["CURRENCY"]] = float(r["OBS_VALUE"])
 # 고시 시각도 손으로 적지 않는다 — 원본 제목 칸 '…, 2.15 pm (C.E.T.)' 에서 읽는다
 _fx_hm = _fx_rows[0]["TITLE_COMPL"].rsplit(", ", 1)[1].split()[0]
 _fx_h, _fx_m = (int(x) for x in _fx_hm.split("."))
 fx_time = f"{_fx_h + 12 if 'pm' in _fx_rows[0]['TITLE_COMPL'] else _fx_h}시 {_fx_m}분"
-fx_blank = sum(1 for r in _fx_rows if r["CURRENCY"] == "KRW" and not r["OBS_VALUE"])
+fx_blank = sum(1 for r in _fx_used if r["CURRENCY"] == "KRW" and not r["OBS_VALUE"])
 FX3 = sorted((d, v) for d, v in _fx.items() if len(v) == 3)
 fx_first, fx_last = FX3[0][0], FX3[-1][0]
+_last_y, _last_m = int(fx_last[:4]), int(fx_last[5:7])
+# 해끼리 비교하는 3·5번은 열두 달이 다 있는 마지막 해까지만 쓴다
+fx_full_y = _last_y if _last_m == 12 else _last_y - 1
+fx_span = f"{fx_first[:4]}년~{_last_y}년 {_last_m}월"
 KRW_PER = {"엔화": lambda v: v["KRW"] / v["JPY"] * 100,     # 100엔
            "달러": lambda v: v["KRW"] / v["USD"],
            "유로": lambda v: v["KRW"]}
 UNIT = {"엔화": "100엔", "달러": "1달러", "유로": "1유로"}
 
-# 1) 2005-01~2026-09. 2020년까지는 1999~2024 파일, 2021년부터는 최근 기간 파일(2021-01~2026-09)을 쓴다.
-#    셈은 위와 같다: 세 통화가 모두 있는 날만. 보기는 겹치지 않는 다섯 구간
-_fx_new = {}
-for r in load_csv("ecb_krw_jpy_usd_2021_2026.csv"):
-    if r["OBS_VALUE"]:
-        _fx_new.setdefault(r["TIME_PERIOD"], {})[r["CURRENCY"]] = float(r["OBS_VALUE"])
-FX3_K1 = sorted([(d, v) for d, v in FX3 if "2005" <= d[:4] <= "2020"]
-                + [(d, v) for d, v in _fx_new.items() if len(v) == 3])
-fxn_first, fxn_last = FX3_K1[0][0], FX3_K1[-1][0]
+# 1) 2005-01 부터. 보기는 겹치지 않는 다섯 구간
+FX3_K1 = [(d, v) for d, v in FX3 if d[:4] >= "2005"]
+fxn_first = FX3_K1[0][0]
 jpy_month = {}
 for d, v in FX3_K1:
     jpy_month.setdefault(d[:7], []).append(KRW_PER["엔화"](v))
 jpy_month = {k: mean(v) for k, v in jpy_month.items()}
 jpy_low = min(jpy_month, key=jpy_month.get)
-_last_y, _last_m = int(fxn_last[:4]), int(fxn_last[5:7])
 JPY_BANDS = [("2005~2009년", 2005, 2009), ("2010~2019년", 2010, 2019),
              ("2020~2024년", 2020, 2024), (f"{_last_y - 1}년", _last_y - 1, _last_y - 1),
              (f"{_last_y}년 1~{_last_m}월", _last_y, _last_y)]
@@ -116,51 +119,52 @@ def fx_year(name, y):
     return mean(KRW_PER[name](v) for d, v in FX3 if d[:4] == str(y))
 
 
-fx_rise = {c: fx_year(c, 2024) / fx_year(c, 1999) - 1 for c in KRW_PER}
+fx_rise = {c: fx_year(c, fx_full_y) / fx_year(c, 1999) - 1 for c in KRW_PER}
 fx_top = max(fx_rise, key=fx_rise.get)
 jpy_under = sum(1 for _, v in FX3 if KRW_PER["엔화"](v) < 1000)
 jpy_under_pct = jpy_under / len(FX3) * 100
 # 원본의 USD 는 '1유로당 달러'. 1보다 작으면 1달러가 1유로보다 비싸다
 usd_year = {}
 for d, v in FX3:
-    usd_year.setdefault(int(d[:4]), []).append(v["USD"])
+    if int(d[:4]) <= fx_full_y:
+        usd_year.setdefault(int(d[:4]), []).append(v["USD"])
 usd_dear = sorted(y for y, v in usd_year.items() if mean(v) < 1)
 
 topic(
     "krw-three", "💱", "원화로 본 세 통화",
-    "1999년부터 2024년까지, 원화로 본 엔화·달러·유로",
+    f"{fx_first[:4]}년부터 {_last_y}년 {_last_m}월까지, 원화로 본 엔화·달러·유로",
     "ECB Data Portal (유럽중앙은행 일별 기준환율)", "https://data.ecb.europa.eu/",
     [
         choice("k1", f"{fxn_first[:4]}년~{_last_y}년 {_last_m}월, 100엔이 원화로 가장 쌌던 달은 "
                "언제쯤일까요?",
                [b for b, _, _ in JPY_BANDS], jpy_low_band,
-               f"{fxn_first}~{fxn_last} 고시일마다 원화 값을 엔화 값으로 나눠 100엔당 원화를 "
+               f"{fxn_first}~{fx_last} 고시일마다 원화 값을 엔화 값으로 나눠 100엔당 원화를 "
                f"구하고 달별로 평균하면 가장 낮은 달은 {jpy_low[:4]}년 {int(jpy_low[5:])}월 "
                f"{jpy_month[jpy_low]:,.1f}원입니다",
                "'엔저'가 이미 지나간 일인지 아직 이어지는 일인지는 기억마다 "
                "다릅니다."),
-        slider("k2", "1999~2024년 평균, 1유로는 몇 원이었을까요?",
+        slider("k2", f"{fx_span} 평균, 1유로는 몇 원이었을까요?",
                eur_avg, "원", 900, 1800, 25,
-               f"{fx_first}~{fx_last} 거래일 {len(FX3):,}일의 1유로당 원화 값을 평균하면 "
+               f"{fx_first}~{fx_last} 고시일 {len(FX3):,}일의 1유로당 원화 값을 평균하면 "
                f"{eur_avg:,.1f}원입니다",
                "유로는 자주 보는 통화가 아니라서, 달러에 비해 감이 크게 "
                "흔들립니다."),
-        choice("k3", "세 통화 중 1999년 대비 2024년에 원화로 가장 많이 오른 통화는?",
+        choice("k3", f"세 통화 중 1999년 대비 {fx_full_y}년에 원화로 가장 많이 오른 통화는?",
                ["엔화", "달러", "유로"], fx_top,
-               "1999년과 2024년의 거래일 평균 원화 값을 비교하면 "
+               f"1999년과 {fx_full_y}년의 고시일 평균 원화 값을 비교하면 "
                + " · ".join(f"{c} {UNIT[c]} {fx_year(c, 1999):,.0f}원 → "
-                            f"{fx_year(c, 2024):,.0f}원({fx_rise[c] * 100:+.1f}%)"
+                            f"{fx_year(c, fx_full_y):,.0f}원({fx_rise[c] * 100:+.1f}%)"
                             for c in KRW_PER) + "입니다",
                "뉴스에 자주 나오는 통화가 가장 많이 움직인 통화라는 보장은 없습니다."),
-        slider("k4", "1999~2024년, 100엔이 1,000원보다 쌌던 날은 전체의 몇 %일까요?",
+        slider("k4", f"{fx_span}, 100엔이 1,000원보다 쌌던 날은 전체의 몇 %일까요?",
                jpy_under_pct, "%", 0, 100, 5,
-               f"{fx_first}~{fx_last} 거래일 {len(FX3):,}일 중 100엔당 원화(원화 값 ÷ 엔화 값 "
+               f"{fx_first}~{fx_last} 고시일 {len(FX3):,}일 중 100엔당 원화(원화 값 ÷ 엔화 값 "
                f"× 100)가 1,000원 미만인 날은 {jpy_under:,}일입니다",
                "'100엔 = 1,000원'이라는 기준점이 머릿속에 박혀 있어서, 그 아래였던 "
                "날의 비율은 감이 잘 안 옵니다."),
-        slider("k5", "1999~2024년 중 1달러가 1유로보다 비쌌던 해는 몇 번일까요?",
+        slider("k5", f"1999~{fx_full_y}년 중 1달러가 1유로보다 비쌌던 해는 몇 번일까요?",
                len(usd_dear), "번", 0, 10, 1,
-               f"{fx_first[:4]}~{fx_last[:4]}년 해마다 1유로당 달러 값을 거래일 평균해 "
+               f"{fx_first[:4]}~{fx_full_y}년 해마다 1유로당 달러 값을 고시일 평균해 "
                f"1보다 작은 해를 세면 {len(usd_dear)}번"
                + (f"({', '.join(f'{y}년' for y in usd_dear)})" if usd_dear else "")
                + "입니다",
