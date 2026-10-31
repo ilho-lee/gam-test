@@ -142,7 +142,11 @@ function renderQ() {
     answers[idx] = null;
     $("btn-next").disabled = true;
     $("q-choice").innerHTML = "";
-    $("q-choice").classList.toggle("many", q.options.length > 6);   // 보기가 많으면 두 칸으로
+    // 보기가 많으면 두 칸으로: 왼쪽 칸에 앞 절반, 오른쪽 칸에 뒤 절반 (30개면 15 · 15)
+    const many = q.options.length > 6;
+    $("q-choice").classList.toggle("many", many);
+    $("q-choice").style.gridTemplateRows = many
+      ? `repeat(${Math.ceil(q.options.length / 2)}, auto)` : "";
     q.options.forEach((opt) => {
       const b = document.createElement("button");
       b.className = "choice";
