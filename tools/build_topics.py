@@ -87,22 +87,27 @@ KRW_PER = {"엔화": lambda v: v["KRW"] / v["JPY"] * 100,     # 100엔
            "유로": lambda v: v["KRW"]}
 UNIT = {"엔화": "100엔", "달러": "1달러", "유로": "1유로"}
 
-# 1) 최근 기간 파일(2021-01~2026-09)을 따로 읽는다. 셈은 위와 같다: 세 통화가 모두 있는 날만
+# 1) 2005-01~2026-09. 2020년까지는 1999~2024 파일, 2021년부터는 최근 기간 파일(2021-01~2026-09)을 쓴다.
+#    셈은 위와 같다: 세 통화가 모두 있는 날만. 보기는 겹치지 않는 다섯 구간
 _fx_new = {}
 for r in load_csv("ecb_krw_jpy_usd_2021_2026.csv"):
     if r["OBS_VALUE"]:
         _fx_new.setdefault(r["TIME_PERIOD"], {})[r["CURRENCY"]] = float(r["OBS_VALUE"])
-FX3_NEW = sorted((d, v) for d, v in _fx_new.items() if len(v) == 3)
-fxn_first, fxn_last = FX3_NEW[0][0], FX3_NEW[-1][0]
+FX3_K1 = sorted([(d, v) for d, v in FX3 if "2005" <= d[:4] <= "2020"]
+                + [(d, v) for d, v in _fx_new.items() if len(v) == 3])
+fxn_first, fxn_last = FX3_K1[0][0], FX3_K1[-1][0]
 jpy_month = {}
-for d, v in FX3_NEW:
+for d, v in FX3_K1:
     jpy_month.setdefault(d[:7], []).append(KRW_PER["엔화"](v))
 jpy_month = {k: mean(v) for k, v in jpy_month.items()}
 jpy_low = min(jpy_month, key=jpy_month.get)
-_last_m = int(fxn_last[5:7])
-JPY_BANDS = [(f"2021~{int(fxn_last[:4]) - 1}년", 2021, int(fxn_last[:4]) - 1),
-             (f"{fxn_last[:4]}년 1~{_last_m}월", int(fxn_last[:4]), int(fxn_last[:4]))]
-jpy_low_band = next(b for b, a, z in JPY_BANDS if a <= int(jpy_low[:4]) <= z)
+_last_y, _last_m = int(fxn_last[:4]), int(fxn_last[5:7])
+JPY_BANDS = [("2005~2009년", 2005, 2009), ("2010~2019년", 2010, 2019),
+             ("2020~2024년", 2020, 2024), (f"{_last_y - 1}년", _last_y - 1, _last_y - 1),
+             (f"{_last_y}년 1~{_last_m}월", _last_y, _last_y)]
+_hits = [b for b, a, z in JPY_BANDS if a <= int(jpy_low[:4]) <= z]
+assert len(_hits) == 1, f"k1: 가장 싼 달 {jpy_low} 이 보기 {_hits} 에 맞게 들어가지 않습니다"
+jpy_low_band = _hits[0]
 
 eur_avg = mean(KRW_PER["유로"](v) for _, v in FX3)
 
@@ -126,7 +131,7 @@ topic(
     "1999년부터 2024년까지, 원화로 본 엔화·달러·유로",
     "ECB Data Portal (유럽중앙은행 일별 기준환율)", "https://data.ecb.europa.eu/",
     [
-        choice("k1", f"2021년~{fxn_last[:4]}년 {_last_m}월, 100엔이 원화로 가장 쌌던 달은 "
+        choice("k1", f"{fxn_first[:4]}년~{_last_y}년 {_last_m}월, 100엔이 원화로 가장 쌌던 달은 "
                "언제쯤일까요?",
                [b for b, _, _ in JPY_BANDS], jpy_low_band,
                f"{fxn_first}~{fxn_last} 고시일마다 원화 값을 엔화 값으로 나눠 100엔당 원화를 "
