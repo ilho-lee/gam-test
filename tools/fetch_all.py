@@ -17,6 +17,7 @@ import http.client
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -38,6 +39,40 @@ SEOUL = (37.5665, 126.9780)
 # 그 구성이 바뀌면 같은 주소로 받아도 지난 값이 달라진다 — 2026-10에 실제로 2024년 서울
 # 열대야가 15일에서 12일로 바뀌었다. 출처에 모델까지 적어야 다시 받아도 같은 값이 나온다.
 ERA5 = "&models=era5"
+
+# (나라, 도시, 위도, 경도, 영어 위키백과 문서) — 순서가 travel_weather.json 응답 목록의 순서다
+TRAVEL_CITIES = [
+    ("스페인", "바르셀로나", 41.38879, 2.15899, "Barcelona"),
+    ("스페인", "마드리드", 40.4165, -3.70256, "Madrid"),
+    ("스페인", "세비야", 37.38283, -5.97317, "Seville"),
+    ("스페인", "발렌시아", 39.47391, -0.37966, "Valencia"),
+    ("스페인", "말라가", 36.72016, -4.42034, "Málaga"),
+    ("이탈리아", "로마", 41.89193, 12.51133, "Rome"),
+    ("이탈리아", "밀라노", 45.46427, 9.18951, "Milan"),
+    ("이탈리아", "나폴리", 40.85216, 14.26811, "Naples"),
+    ("이탈리아", "피렌체", 43.77925, 11.24626, "Florence"),
+    ("이탈리아", "토리노", 45.07049, 7.68682, "Turin"),
+    ("독일", "베를린", 52.52437, 13.41053, "Berlin"),
+    ("독일", "뮌헨", 48.13743, 11.57549, "Munich"),
+    ("독일", "쾰른", 50.93333, 6.95, "Cologne"),
+    ("독일", "함부르크", 53.55073, 9.99302, "Hamburg"),
+    ("독일", "프랑크푸르트", 50.11552, 8.68417, "Frankfurt"),
+    ("노르웨이", "오슬로", 59.91273, 10.74609, "Oslo"),
+    ("노르웨이", "베르겐", 60.39299, 5.32415, "Bergen"),
+    ("노르웨이", "트론헤임", 63.43049, 10.39506, "Trondheim"),
+    ("노르웨이", "스타방에르", 58.97005, 5.73332, "Stavanger"),
+    ("노르웨이", "올레순", 62.47225, 6.15492, "Ålesund"),
+    ("스웨덴", "스톡홀름", 59.32938, 18.06871, "Stockholm"),
+    ("스웨덴", "예테보리", 57.70716, 11.96679, "Gothenburg"),
+    ("스웨덴", "말뫼", 55.60587, 13.00073, "Malmö"),
+    ("스웨덴", "웁살라", 59.85882, 17.63889, "Uppsala"),
+    ("스웨덴", "룬드", 55.70584, 13.19321, "Lund"),
+    ("일본", "도쿄", 35.6895, 139.69171, "Tokyo"),
+    ("일본", "오사카", 34.69379, 135.50107, "Osaka"),
+    ("일본", "교토", 35.02107, 135.75385, "Kyoto"),
+    ("일본", "히로시마", 34.4, 132.45, "Hiroshima"),
+    ("일본", "요코하마", 35.43333, 139.65, "Yokohama"),
+]
 
 SOURCES: list[tuple[str, str, str]] = [
     # (저장 파일명, 설명, URL)
@@ -117,6 +152,24 @@ SOURCES: list[tuple[str, str, str]] = [
           ("london", "런던", 51.5072, -0.1276),
           ("singapore", "싱가포르", 1.3521, 103.8198),
       )],
+
+    # 여행지 30곳 — 나라별 GeoNames 인구 상위 15곳 중 영어 위키백과 2023-10~2026-09
+    # 조회수 상위 5곳. 좌표는 GeoNames 값. 한 번에 여러 지점을 부르면 응답은 지점별 목록이다
+    ("travel_weather.json",
+     "여행지 30곳 일별 기온·강수 2023-10~2026-09 (Open-Meteo Archive · ERA5 고정)",
+     "https://archive-api.open-meteo.com/v1/archive"
+     "?latitude=" + ",".join(str(c[2]) for c in TRAVEL_CITIES)
+     + "&longitude=" + ",".join(str(c[3]) for c in TRAVEL_CITIES)
+     + "&start_date=2023-10-01&end_date=2026-09-30"
+     "&daily=temperature_2m_max,temperature_2m_min,precipitation_sum"
+     "&timezone=auto" + ERA5),
+
+    # 여행지 30곳의 영어 위키백과 월별 조회수 (Wikimedia Pageviews · 사람만, 봇 제외).
+    # 방문자 수가 아니라 '문서를 읽은 횟수' 다. 문서 하나에 한 번씩 부른다
+    *[(f"travel_views_{i:02d}.json", f"{c[1]} 영어 위키백과 월별 조회수 2023-10~2026-09 (Wikimedia)",
+       "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/"
+       + urllib.parse.quote(c[4], safe="") + "/monthly/2023100100/2026093000")
+      for i, c in enumerate(TRAVEL_CITIES)],
 
     ("quakes.geojson",
      "규모 5.5 이상 지진 2000~2024 (USGS) — 2만건 상한에 걸리지 않는 기준",

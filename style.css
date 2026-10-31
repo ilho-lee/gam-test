@@ -14,8 +14,10 @@
   --miss: #fb7185;
   --radius: 16px;
 
-  /* 첫 화면 — 시안2.png 의 노랑. 문항·결과 화면은 위의 어두운 색 그대로 */
-  --home-bg: #ffd83d;
+  /* 첫 화면 — 유럽·일본 여행지 느낌: 하늘에서 모래빛으로, 아래에 풍경 실루엣(bg-travel.svg).
+     문항·결과 화면은 위의 어두운 색 그대로 */
+  --home-bg: #cfe3f5;
+  --home-sky: linear-gradient(180deg, #a9d2f2 0%, #d9ebf7 45%, #f7e6c8 100%);
   --home-card: #fffbef;
   --home-line: #1d1c1a;
   --home-ink: #1d1c1a;
@@ -34,7 +36,7 @@ html, body {
   margin: 0;
   background: radial-gradient(900px 600px at 50% -10%, var(--bg2), var(--bg));
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+  font-family: "Gowun Dodum", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
                Pretendard, "Malgun Gothic", sans-serif;
   font-size: 16px;
   line-height: 1.6;
@@ -64,7 +66,11 @@ h2 { font-size: 21px; line-height: 1.4; margin: 6px 0 22px; letter-spacing: -.3p
   color: var(--ink);
 }
 html:has(#view-home:not([hidden])),
-html:has(#view-home:not([hidden])) body { background: var(--home-bg); }
+html:has(#view-home:not([hidden])) body {
+  background: url("bg-travel.svg") center bottom / 100% auto no-repeat fixed, var(--home-sky);
+  background-color: var(--home-bg);
+}
+#view-home { padding-bottom: 120px; }   /* 카드가 실루엣에 덮이지 않게 */
 
 .hero { padding: 34px 0 26px; }
 .badge-day {
@@ -73,7 +79,8 @@ html:has(#view-home:not([hidden])) body { background: var(--home-bg); }
   border-radius: 999px; padding: 3px 14px; transform: rotate(-4deg);
 }
 #title {
-  font-size: 44px; font-weight: 900; line-height: 1.15; letter-spacing: -2px;
+  font-family: "Jua", "Gowun Dodum", sans-serif;
+  font-size: 44px; font-weight: 400; line-height: 1.15; letter-spacing: -1px;
   margin: 14px 0 8px;
 }
 #subtitle { font-size: 18px; font-weight: 700; color: var(--muted); margin: 0; }

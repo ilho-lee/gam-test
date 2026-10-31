@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMax slice">
+  <!-- 첫 화면 바탕: 유럽(피오르·돔·종탑·성)과 일본(오층탑·도리이·눈 덮인 산) 실루엣 -->
+  <!-- 먼 산 -->
+  <path fill="#9fb8d6" d="M0 210 L90 120 L150 170 L230 90 L320 190 L380 150 L440 210 Z"/>
+  <path fill="#f4f7fb" d="M230 90 L250 112 L238 108 L226 118 L212 108 Z"/>
+  <path fill="#a9bfdc" d="M820 210 L1000 70 L1180 210 Z"/>
+  <path fill="#f4f7fb" d="M1000 70 L1036 98 L1018 94 L1004 104 L990 94 L966 98 Z"/>
+  <g fill="#3b4a6b">
+    <!-- 돔 성당 -->
+    <rect x="300" y="220" width="120" height="80"/>
+    <path d="M318 222 A42 42 0 0 1 402 222 Z"/>
+    <rect x="356" y="160" width="8" height="24"/>
+    <path d="M360 150 L366 162 L354 162 Z"/>
+    <!-- 종탑 -->
+    <rect x="440" y="140" width="34" height="160"/>
+    <path d="M434 142 L457 96 L480 142 Z"/>
+    <!-- 성 -->
+    <rect x="500" y="200" width="110" height="100"/>
+    <rect x="500" y="188" width="14" height="14"/><rect x="528" y="188" width="14" height="14"/>
+    <rect x="556" y="188" width="14" height="14"/><rect x="584" y="188" width="14" height="14"/>
+    <rect x="590" y="150" width="34" height="150"/>
+    <path d="M584 152 L607 112 L630 152 Z"/>
+    <!-- 오층탑 -->
+    <g transform="translate(700 0)">
+      <rect x="22" y="150" width="16" height="150"/>
+      <path d="M-8 300 L68 300 L60 284 L0 284 Z"/>
+      <path d="M-4 262 L64 262 L52 252 L8 252 Z"/>
+      <path d="M0 232 L60 232 L50 222 L10 222 Z"/>
+      <path d="M4 204 L56 204 L47 195 L13 195 Z"/>
+      <path d="M8 178 L52 178 L44 170 L16 170 Z"/>
+      <rect x="28" y="128" width="4" height="44"/>
+    </g>
+    <!-- 도리이 -->
+    <g transform="translate(800 0)">
+      <rect x="10" y="226" width="9" height="74"/><rect x="61" y="226" width="9" height="74"/>
+      <path d="M-6 214 Q40 206 86 214 L86 222 Q40 215 -6 222 Z"/>
+      <rect x="2" y="234" width="76" height="6"/>
+      <rect x="36" y="222" width="8" height="12"/>
+    </g>
+    <!-- 앞쪽 지붕들 -->
+    <path d="M0 300 L0 262 L40 246 L80 262 L80 252 L130 236 L180 252 L180 270 L230 270 L230 258 L270 244 L300 258 L300 300 Z"/>
+    <path d="M900 300 L900 266 L960 250 L1020 266 L1060 262 L1100 246 L1150 262 L1200 254 L1200 300 Z"/>
+  </g>
+</svg>
