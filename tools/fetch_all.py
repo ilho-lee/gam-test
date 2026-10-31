@@ -136,6 +136,12 @@ SOURCES: list[tuple[str, str, str]] = [
      "https://data-api.ecb.europa.eu/service/data/EXR/D.KRW+JPY+USD.EUR.SP00.A"
      "?format=csvdata&startPeriod=1999-01-04&endPeriod=2024-12-31"),
 
+    # 같은 표의 최근 기간 — 위 파일은 그대로 두고 따로 받는다 (원화로 본 세 통화 1번 문항)
+    ("ecb_krw_jpy_usd_2021_2026.csv",
+     "유로 대비 원화·엔화·달러 2021-01~2026-09 (ECB Data Portal · 일별 기준환율)",
+     "https://data-api.ecb.europa.eu/service/data/EXR/D.KRW+JPY+USD.EUR.SP00.A"
+     "?format=csvdata&startPeriod=2021-01-01&endPeriod=2026-09-30"),
+
     ("wb_countries.json",
      "World Bank 국가 목록 — 대륙·소득군 같은 집계치를 걸러내는 데 씁니다",
      "https://api.worldbank.org/v2/country?format=json&per_page=400"),

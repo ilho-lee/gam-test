@@ -87,13 +87,21 @@ KRW_PER = {"엔화": lambda v: v["KRW"] / v["JPY"] * 100,     # 100엔
            "유로": lambda v: v["KRW"]}
 UNIT = {"엔화": "100엔", "달러": "1달러", "유로": "1유로"}
 
+# 1) 최근 기간 파일(2021-01~2026-09)을 따로 읽는다. 셈은 위와 같다: 세 통화가 모두 있는 날만
+_fx_new = {}
+for r in load_csv("ecb_krw_jpy_usd_2021_2026.csv"):
+    if r["OBS_VALUE"]:
+        _fx_new.setdefault(r["TIME_PERIOD"], {})[r["CURRENCY"]] = float(r["OBS_VALUE"])
+FX3_NEW = sorted((d, v) for d, v in _fx_new.items() if len(v) == 3)
+fxn_first, fxn_last = FX3_NEW[0][0], FX3_NEW[-1][0]
 jpy_month = {}
-for d, v in FX3:
+for d, v in FX3_NEW:
     jpy_month.setdefault(d[:7], []).append(KRW_PER["엔화"](v))
 jpy_month = {k: mean(v) for k, v in jpy_month.items()}
 jpy_low = min(jpy_month, key=jpy_month.get)
-JPY_BANDS = [("1999~2004년", 1999, 2004), ("2005~2009년", 2005, 2009),
-             ("2010~2019년", 2010, 2019), ("2020~2024년", 2020, 2024)]
+_last_m = int(fxn_last[5:7])
+JPY_BANDS = [(f"2021~{int(fxn_last[:4]) - 1}년", 2021, int(fxn_last[:4]) - 1),
+             (f"{fxn_last[:4]}년 1~{_last_m}월", int(fxn_last[:4]), int(fxn_last[:4]))]
 jpy_low_band = next(b for b, a, z in JPY_BANDS if a <= int(jpy_low[:4]) <= z)
 
 eur_avg = mean(KRW_PER["유로"](v) for _, v in FX3)
@@ -118,13 +126,14 @@ topic(
     "1999년부터 2024년까지, 원화로 본 엔화·달러·유로",
     "ECB Data Portal (유럽중앙은행 일별 기준환율)", "https://data.ecb.europa.eu/",
     [
-        choice("k1", "1999~2024년, 100엔이 원화로 가장 쌌던 달은 언제쯤일까요?",
+        choice("k1", f"2021년~{fxn_last[:4]}년 {_last_m}월, 100엔이 원화로 가장 쌌던 달은 "
+               "언제쯤일까요?",
                [b for b, _, _ in JPY_BANDS], jpy_low_band,
-               f"{fx_first}~{fx_last} 거래일마다 원화 값을 엔화 값으로 나눠 100엔당 원화를 "
+               f"{fxn_first}~{fxn_last} 고시일마다 원화 값을 엔화 값으로 나눠 100엔당 원화를 "
                f"구하고 달별로 평균하면 가장 낮은 달은 {jpy_low[:4]}년 {int(jpy_low[5:])}월 "
                f"{jpy_month[jpy_low]:,.1f}원입니다",
-               "'엔저'는 최근 일로 기억되지만, 원화로 본 엔화가 가장 쌌던 때는 "
-               "따로 있습니다."),
+               "'엔저'가 이미 지나간 일인지 아직 이어지는 일인지는 기억마다 "
+               "다릅니다."),
         slider("k2", "1999~2024년 평균, 1유로는 몇 원이었을까요?",
                eur_avg, "원", 900, 1800, 25,
                f"{fx_first}~{fx_last} 거래일 {len(FX3):,}일의 1유로당 원화 값을 평균하면 "
