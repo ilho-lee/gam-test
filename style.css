@@ -82,8 +82,17 @@ html[data-topic="krw-three"] body:not(:has(#view-home:not([hidden])))::before {
   background: url("bg-money.svg") 0 0 / 260px 260px repeat;
   filter: blur(3px); opacity: .45;
 }
+/* 여행지 주제 — 같은 방식으로 여행 무늬(bg-trip.svg)를 흐릿하게, 아래는 첫 화면의 하늘빛을 옅게 */
+html[data-topic="travel"] body:not(:has(#view-home:not([hidden])))::before {
+  content: ""; position: fixed; inset: -20px; z-index: -1; pointer-events: none;
+  background: url("bg-trip.svg") 0 0 / 280px 280px repeat;
+  filter: blur(2.5px); opacity: .36;
+}
+html[data-topic="travel"]:not(:has(#view-home:not([hidden]))) {
+  background: linear-gradient(180deg, #f4f6fb 0%, #eaf3fb 55%, #f8eedd 100%) fixed;
+}
 /* body 자체 바탕이 그 겹을 덮지 않게, 이때만 body 바탕을 비운다 (바탕색은 html 이 낸다) */
-html[data-topic="krw-three"] body:not(:has(#view-home:not([hidden]))) { background: transparent; }
+html[data-topic] body:not(:has(#view-home:not([hidden]))) { background: transparent; }
 
 .hero { padding: 34px 0 26px; }
 .badge-day {
