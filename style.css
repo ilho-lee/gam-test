@@ -2,16 +2,18 @@
    큰 화면에서는 가운데 한 칸으로만 넓어집니다. */
 
 :root {
-  --bg: #0f1020;
-  --bg2: #191b35;
-  --card: #21243f;
-  --line: #2f3358;
-  --ink: #f2f3fb;
-  --muted: #9aa0c6;
-  --brand: #7c8cff;
-  --ok: #34d399;
-  --warn: #fbbf24;
-  --miss: #fb7185;
+  /* 문항·결과 화면 — 밝은 바탕 */
+  --bg: #f4f6fb;
+  --bg2: #ffffff;
+  --card: #ffffff;
+  --line: #d8dcea;
+  --ink: #1b1d2e;
+  --muted: #5d627e;
+  --brand: #4b5bd6;
+  --brand-soft: #e9ecfd;
+  --ok: #0f8a63;
+  --warn: #b7791f;
+  --miss: #d6335a;
   --radius: 16px;
 
   /* 첫 화면 — 유럽·일본 여행지 느낌: 하늘에서 모래빛으로, 아래에 풍경 실루엣(bg-travel.svg).
@@ -72,6 +74,15 @@ html:has(#view-home:not([hidden])) body {
 }
 #view-home { padding-bottom: 120px; }   /* 카드가 실루엣에 덮이지 않게 */
 
+/* 세 통화 주제를 푸는 동안 — 화폐 무늬 바탕 (첫 화면 규칙이 더 강해서 첫 화면에는 안 나온다) */
+html[data-topic="krw-three"], html[data-topic="krw-three"] body {
+  background: url("bg-money.svg") 0 0 / 260px 260px repeat, var(--bg);
+}
+/* 글씨가 무늬에 묻히지 않게 가운데 칸만 반투명 막을 깐다 */
+html[data-topic="krw-three"] body:not(:has(#view-home:not([hidden]))) #app {
+  background: rgba(244, 246, 251, .88); border-radius: 22px;
+}
+
 .hero { padding: 34px 0 26px; }
 .badge-day {
   display: inline-block; font-size: 14px; font-weight: 800; color: var(--ink);
@@ -95,7 +106,7 @@ button {
   font: inherit; font-weight: 700; border: 0; border-radius: 14px;
   width: 100%; padding: 17px; cursor: pointer;
 }
-.primary { background: var(--brand); color: #0e1030; }
+.primary { background: var(--brand); color: #ffffff; }
 .primary:disabled { background: var(--line); color: var(--muted); cursor: default; }
 .ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
 .actions { display: grid; gap: 10px; margin-top: 26px; }
@@ -116,7 +127,7 @@ button {
   transition: transform .06s ease, border-color .15s ease;
 }
 .choice:active { transform: scale(.985); }
-.choice[aria-pressed="true"] { border-color: var(--brand); background: #2a2f5c; }
+.choice[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); }
 
 /* 슬라이더 */
 .slider-out {
@@ -160,7 +171,7 @@ input[type=range]::-moz-range-thumb {
 
 /* 결과 — 촌평 */
 .ai {
-  background: linear-gradient(135deg, #2a2f5c, #21243f);
+  background: linear-gradient(135deg, var(--brand-soft), var(--card));
   border: 1px solid var(--line); border-radius: var(--radius);
   padding: 16px 17px; font-size: 14.5px; margin-bottom: 16px;
 }
@@ -200,7 +211,7 @@ input[type=range]::-moz-range-thumb {
 }
 .pill.real { border-color: var(--ok); color: var(--ok); font-weight: 700; }
 .pill.mine { border-color: var(--miss); color: var(--miss); }
-.pill.both { border-color: var(--ok); background: rgba(52,211,153,.14); color: var(--ok); font-weight: 700; }
+.pill.both { border-color: var(--ok); background: rgba(15,138,99,.10); color: var(--ok); font-weight: 700; }
 
 /* 슬라이더 결과 — 손잡이가 정답으로 움직입니다 */
 .track { position: relative; height: 34px; margin: 2px 0 12px; }
@@ -214,7 +225,7 @@ input[type=range]::-moz-range-thumb {
 }
 .track .ghost { background: var(--line); border: 2px solid var(--muted); }
 .track .live {
-  background: var(--ok); box-shadow: 0 0 0 4px rgba(52,211,153,.18);
+  background: var(--ok); box-shadow: 0 0 0 4px rgba(15,138,99,.16);
   transition: left 1s cubic-bezier(.22,1,.36,1);
 }
 

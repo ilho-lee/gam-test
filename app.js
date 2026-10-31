@@ -118,6 +118,7 @@ function renderGrid() {
 
 async function start(id) {
   PACK = await (await fetch(`topics/${id}.json`)).json();
+  document.documentElement.dataset.topic = id;   // 주제별 바탕은 style.css 에서
   idx = 0; answers = [];
   $("topic-name").textContent = `${PACK.emoji} ${PACK.title}`;
   renderQ();

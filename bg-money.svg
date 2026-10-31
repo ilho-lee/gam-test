@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260">
+  <!-- 세 통화 주제의 바탕 무늬: 동전(₩ ¥ $ €)과 단순한 지폐 모양. 실제 지폐 도안이 아니다 -->
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="700" text-anchor="middle">
+    <!-- 지폐 -->
+    <g transform="rotate(-12 70 60)">
+      <rect x="20" y="35" width="100" height="52" rx="6" fill="#e3f1e6" stroke="#b9dcc2" stroke-width="2"/>
+      <circle cx="70" cy="61" r="15" fill="none" stroke="#b9dcc2" stroke-width="2"/>
+      <text x="70" y="67" font-size="17" fill="#9ccaa8">₩</text>
+    </g>
+    <g transform="rotate(10 190 180)">
+      <rect x="140" y="155" width="100" height="52" rx="6" fill="#e6ecfa" stroke="#c3cff0" stroke-width="2"/>
+      <circle cx="190" cy="181" r="15" fill="none" stroke="#c3cff0" stroke-width="2"/>
+      <text x="190" y="187" font-size="17" fill="#a7b6e6">€</text>
+    </g>
+    <!-- 동전 -->
+    <circle cx="200" cy="55" r="24" fill="#fbefc9" stroke="#efd88f" stroke-width="3"/>
+    <text x="200" y="63" font-size="22" fill="#d9bb5e">$</text>
+    <circle cx="55" cy="195" r="22" fill="#f6e3d6" stroke="#e6c3aa" stroke-width="3"/>
+    <text x="55" y="203" font-size="21" fill="#cfa384">¥</text>
+    <circle cx="125" cy="125" r="13" fill="#f3f4f8" stroke="#d6d9e6" stroke-width="2"/>
+    <text x="125" y="130" font-size="13" fill="#b9bdd2">₩</text>
+  </g>
+</svg>
