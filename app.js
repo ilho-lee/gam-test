@@ -142,6 +142,7 @@ function renderQ() {
     answers[idx] = null;
     $("btn-next").disabled = true;
     $("q-choice").innerHTML = "";
+    $("q-choice").classList.toggle("many", q.options.length > 6);   // 보기가 많으면 두 칸으로
     q.options.forEach((opt) => {
       const b = document.createElement("button");
       b.className = "choice";

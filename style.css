@@ -139,6 +139,8 @@ button {
 }
 .choice:active { transform: scale(.985); }
 .choice[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); }
+.choices.many { grid-template-columns: 1fr 1fr; gap: 8px; }
+.choices.many .choice { padding: 11px 12px; font-size: 15px; }
 
 /* 슬라이더 */
 .slider-out {

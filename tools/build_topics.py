@@ -180,13 +180,13 @@ for i, (cc, city, _lat, _lon, _art) in enumerate(TRAVEL_CITIES):
 tr_first, tr_last = TRAVEL[0]["days"][0]["d"], TRAVEL[0]["days"][-1]["d"]
 TR_COUNTRIES = list(dict.fromkeys(c["cc"] for c in TRAVEL))
 
-# 1) 7월 평균 최고기온 — 2024·2025년 7월. 보기는 가장 낮은 4곳을 도시 목록 순서로
+# 1) 7월 평균 최고기온 — 2024·2025년 7월. 보기는 30곳 모두를 도시 목록 순서로, '도시 (나라)'
 JUL_YEARS = ("2024", "2025")
-jul_hi = {c["city"]: mean(x["hi"] for x in c["days"]
-                          if x["d"][5:7] == "07" and x["d"][:4] in JUL_YEARS)
+jul_hi = {f'{c["city"]} ({c["cc"]})': mean(x["hi"] for x in c["days"]
+                                           if x["d"][5:7] == "07" and x["d"][:4] in JUL_YEARS)
           for c in TRAVEL}
 jul_low4 = sorted(jul_hi, key=jul_hi.get)[:4]
-jul_opts = [c["city"] for c in TRAVEL if c["city"] in jul_low4]
+jul_opts = list(jul_hi)
 jul_cool = jul_low4[0]
 
 # 2) 나라별 도시 5곳 영어 위키백과 조회수 합
